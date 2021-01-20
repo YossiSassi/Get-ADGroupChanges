@@ -179,10 +179,10 @@ www.10root.com
     # Wrap up
     $GroupMembershipChanges | Sort-Object LastChangeDateTime -Descending
 
-    Write-Host "Found changes information for $($ReplMetaData.count) accounts in group <$($Group.distinguishedName)>" -ForegroundColor Cyan
+    Write-Host "Found changes information for $($ReplMetaData.count) accounts in group <$($GroupObj.Properties.distinguishedname -join ',')>" -ForegroundColor Cyan
 
     if ($Output -eq "Grid") {
-            $GroupMembershipChanges | Sort-Object LastChangeDateTime -Descending | Out-GridView -Title "Group membership changes for group $($GroupName.ToUpper())"
+            $GroupMembershipChanges | Sort-Object LastChangeDateTime -Descending | Out-GridView -Title "Group membership changes for group $($($GroupObj.Properties.samaccountname -join ',').ToUpper())"
         }
     
     if ($Output -eq "CSV") {
