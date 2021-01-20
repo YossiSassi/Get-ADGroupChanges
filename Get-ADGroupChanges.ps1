@@ -111,7 +111,6 @@ www.10root.com
     $ObjSearcher.PageSize = $PageSize; $objSearcher.SizeLimit = $PageSize
     $ObjSearcher.Filter = "(&(objectClass=group)(name=$GroupName))"
     $ObjSearcher.PropertiesToLoad.AddRange(("AdminCount","CanonicalName", "DistinguishedName", "Description", "GroupType","samaccountname", "SidHistory", "ManagedBy", "msDS-ReplValueMetaData", "ObjectSID", "WhenCreated", "WhenChanged"))
-    #$ObjSearcher.SearchScope = "Subtree"
 
     $GroupObj = $ObjSearcher.FindOne()
     $ObjSearcher.dispose()
@@ -172,7 +171,6 @@ www.10root.com
     else
     {
         Write-Warning "Error while getting the Group Object. Make sure you typed the group name correctly."
-        Write-Verbose "[EXCEPTION] $($_.Exception.Message)"
         break
     }
 
