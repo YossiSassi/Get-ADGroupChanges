@@ -149,6 +149,9 @@ www.10root.com
             $ObjMember = [adsi]"LDAP://$($ReplValue.DS_REPL_VALUE_META_DATA.pszObjectDn)"
             $MemberSamAccountName = $ObjMember.Properties.samaccountname -join ','
             $MemberAdminCount = $ObjMember.Properties.admincount -join ','
+	    
+	    # add a warning in case AdminCount attribute was reset, after member was removed
+            if ($LastAction -eq "Removed" -and $MemberAdminCount -ne 1) {Write-Warning "AdminCount attribute for $($MemberSamAccountName.ToUpper()) was *Reset* after member was removed from group"}
 
             $GroupChangeObj = New-Object PSObject;
             Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "GroupName" -Value $($GroupObj.Properties.samaccountname -join ',') -Force
