@@ -90,23 +90,18 @@ www.10root.com
 #>
     param(
         [cmdletbinding()]
-        [Parameter(Mandatory = $false)]
-        [string]$Domain,
-
-        [Parameter(Mandatory = $false)]
-        [int]$PageSize = 1000,
-
         [Parameter(Mandatory = $true)]
         [string]$GroupName,
+
+        [Parameter(Mandatory = $false)]
+        [string]$Domain = "$env:USERDOMAIN",
+
+        [Parameter(Mandatory = $false)]
+        [int]$PageSize = 10000,
 
         [ValidateSet("Grid", "CSV", IgnoreCase = $true)]
         [String[]]$Output
     )
-
-    if (!$Domain)
-        {
-            $Domain = $env:USERDOMAIN    
-        }
 
     $DN = (Get-ADDomain -Server $Domain).distinguishedname;
     $DomainObj = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$DN");
