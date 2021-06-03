@@ -6,7 +6,6 @@ Function Get-ADGroupChanges
 
     ADGroupChanges Function: Get-ADGroupChanges
     Author: Y1nTh35h311 (yossis@protonmail.com, #Yossi_Sassi)
-    Version: 1.0.1
     License: BSD 3-Clause
     Required Dependencies: None
     Optional Dependencies: None
@@ -154,10 +153,13 @@ www.10root.com
             $MemberSamAccountName = $ObjMember.Properties.samaccountname -join ','
             $MemberAdminCount = $ObjMember.Properties.admincount -join ','
 
+	    $Enabled = if (([adsisearcher]"(samaccountname=$MemberSamAccountName)").FindOne().Properties.useraccountcontrol -eq 514) {"False"} else {"True"}
+
             $GroupChangeObj = New-Object PSObject;
             Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "GroupName" -Value $($GroupObj.Properties.samaccountname -join ',') -Force
             Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "GroupDN" -Value $($GroupObj.Properties.distinguishedname -join ',') -Force
             Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "MemberSamAccountName" -Value $MemberSamAccountName -Force
+            Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "Enabled" -Value $Enabled -Force
             Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "LastChange" -Value $LastAction -Force
             Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "MemberDN" -Value $ReplValue.DS_REPL_VALUE_META_DATA.pszObjectDn -Force
             Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "MemberAdminCount" -Value $MemberAdminCount -Force
@@ -184,7 +186,7 @@ www.10root.com
     Write-Host "Found changes information for $($ReplMetaData.count) accounts in group <$($GroupObj.Properties.distinguishedname -join ',')>" -ForegroundColor Cyan
 
     if ($Output -eq "Grid") {
-            $GroupMembershipChanges | Sort-Object LastChangeDateTime -Descending | Out-GridView -Title "Group membership changes for group $($($GroupObj.Properties.samaccountname -join ',').ToUpper())"
+            $GroupMembershipChanges | Sort-Object LastChangeDateTime -Descending | Out-GridView -Title "Group membership changes for group $($($GroupObj.Properties.samaccountname -join ',').ToUpper()) in domain $(($Domain).ToUpper())"
         }
     
     if ($Output -eq "CSV") {
