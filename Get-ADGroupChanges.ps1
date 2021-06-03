@@ -6,7 +6,7 @@ Function Get-ADGroupChanges
 
     ADGroupChanges Function: Get-ADGroupChanges
     Author: Y1nTh35h311 (yossis@protonmail.com, #Yossi_Sassi)
-    Version: 1.0.1
+    Version: 1.0.2
     License: BSD 3-Clause
     Required Dependencies: None
     Optional Dependencies: None
@@ -154,7 +154,8 @@ www.10root.com
             $MemberSamAccountName = $ObjMember.Properties.samaccountname -join ','
             $MemberAdminCount = $ObjMember.Properties.admincount -join ','
 
-	    $Enabled = if (([adsisearcher]"(samaccountname=$MemberSamAccountName)").FindOne().Properties.useraccountcontrol -eq 514) {"False"} else {"True"}
+	    #$Enabled = if ($ObjMember.Properties.useraccountcontrol -eq 514 -or $ObjMember.Properties.useraccountcontrol -eq 66050) {"False"} else {"True"}
+	    $Enabled = if ($ObjMember.psbase.InvokeGet("useraccountcontrol") -band "0x2") {"False"} else {"True"}
 
             $GroupChangeObj = New-Object PSObject;
             Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "GroupName" -Value $($GroupObj.Properties.samaccountname -join ',') -Force
