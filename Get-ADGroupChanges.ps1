@@ -6,6 +6,7 @@ Function Get-ADGroupChanges
 
     ADGroupChanges Function: Get-ADGroupChanges
     Author: Y1nTh35h311 (yossis@protonmail.com, #Yossi_Sassi)
+    Version: 1.0.1
     License: BSD 3-Clause
     Required Dependencies: None
     Optional Dependencies: None
