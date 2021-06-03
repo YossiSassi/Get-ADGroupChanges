@@ -6,6 +6,7 @@ Function Get-ADGroupChanges
 
     ADGroupChanges Function: Get-ADGroupChanges
     Author: Y1nTh35h311 (yossis@protonmail.com, #Yossi_Sassi)
+    Version: 1.0.1
     License: BSD 3-Clause
     Required Dependencies: None
     Optional Dependencies: None
@@ -107,7 +108,10 @@ www.10root.com
             $Domain = $env:USERDOMAIN    
         }
 
-    $objSearcher = New-Object System.DirectoryServices.DirectorySearcher -ArgumentList $Domain
+    $DN = (Get-ADDomain -Server $Domain).distinguishedname;
+    $DomainObj = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$DN");
+
+    $objSearcher = New-Object System.DirectoryServices.DirectorySearcher -ArgumentList $DomainObj
     $ObjSearcher.PageSize = $PageSize; $objSearcher.SizeLimit = $PageSize
     $ObjSearcher.Filter = "(&(objectClass=group)(name=$GroupName))"
     $ObjSearcher.PropertiesToLoad.AddRange(("AdminCount","CanonicalName", "DistinguishedName", "Description", "GroupType","samaccountname", "SidHistory", "ManagedBy", "msDS-ReplValueMetaData", "ObjectSID", "WhenCreated", "WhenChanged"))
@@ -149,9 +153,6 @@ www.10root.com
             $ObjMember = [adsi]"LDAP://$($ReplValue.DS_REPL_VALUE_META_DATA.pszObjectDn)"
             $MemberSamAccountName = $ObjMember.Properties.samaccountname -join ','
             $MemberAdminCount = $ObjMember.Properties.admincount -join ','
-	    
-	    # add a warning in case AdminCount attribute was reset, after member was removed
-            if ($LastAction -eq "Removed" -and $MemberAdminCount -ne 1) {Write-Warning "AdminCount attribute for $($MemberSamAccountName.ToUpper()) was *Reset* after member was removed from group"}
 
             $GroupChangeObj = New-Object PSObject;
             Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "GroupName" -Value $($GroupObj.Properties.samaccountname -join ',') -Force
