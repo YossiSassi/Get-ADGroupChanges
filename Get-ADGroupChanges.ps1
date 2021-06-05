@@ -103,7 +103,7 @@ www.10root.com
         [String[]]$Output
     )
 
-    $DN = (Get-ADDomain -Server $Domain).distinguishedname;
+    $DN = ([adsi]"LDAP://$Domain").distinguishedName;
     $DomainObj = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$DN");
 
     $objSearcher = New-Object System.DirectoryServices.DirectorySearcher -ArgumentList $DomainObj
