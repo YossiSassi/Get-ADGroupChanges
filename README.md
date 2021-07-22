@@ -1,2 +1,2 @@
 # Get-ADGroupChanges
-"Pure" powershell command (no dependencies, no special permissions etc') to retrieve change history in an AD group membership. relies on object metadata rather than event logs. useful for DF/IR, tracking changes in groups etc'.
+"Pure" powershell command (no dependencies, no special permissions needed etc') to retrieve change history in an AD group membership, or all groups, or per user. relies on object metadata rather than event logs. useful for DF/IR, tracking changes in groups etc'. Supports querying AD Metadata either from an Online Domain Controller, or from an offline system state backup / Snapshot.
