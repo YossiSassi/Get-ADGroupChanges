@@ -593,6 +593,15 @@ if ($global:UseExistingOfflineDBInstance -and $global:DSAProc -eq $null)
         {
             $DSAMainArguments = "/dbpath """ + $NTDSditDBPath + """ /ldapport $global:BackupInstanceLDAPPort /allowNonAdminAccess"
             $DsaMainProc = Start-Process -FilePath $DSAMainFilePath -ArgumentList $DSAMainArguments -PassThru -RedirectStandardError $true -WindowStyle Hidden;
+	    
+	    # Check if process was launched successfully
+            Sleep -Seconds 3;
+            if (!(Get-Process -Id $DsaMainProc.Id -ErrorAction SilentlyContinue))
+                {
+                    Write-Warning "[X] Process was Not loaded successfully. Make sure NTDS.dit file is not corrupted.`nLoading of the NTDS Instance Failed";
+		            break
+                }
+
             Write-Host "[*] NTDS instance Loaded on Port <$global:BackupInstanceLDAPPort>" -ForegroundColor Cyan
     
             # make sure instance loaded fine
