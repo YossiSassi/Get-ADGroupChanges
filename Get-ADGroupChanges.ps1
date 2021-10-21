@@ -6,7 +6,7 @@ Function Get-ADGroupChanges
 
     ADGroupChanges Function: Get-ADGroupChanges
     Author: 1nTh35h311 (yossis@protonmail.com, #Yossi_Sassi)
-    Version: 1.5
+    Version: 1.5.1
     Required Dependencies: None
     Optional Dependencies: None
     License: 
@@ -636,10 +636,17 @@ if ($global:UseExistingOfflineDBInstance -and $global:DSAProc -eq $null)
         }
     else
         {
-            $DN = ([adsi]"LDAP://$Domain").distinguishedName;
+            if ($Domain)
+                {
+                    $DN = ([adsi]"LDAP://$Domain").distinguishedName
+                }
+            else
+                {
+                    $DN = ([adsi]'').distinguishedName;
+                }
+
             $DomainObj = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$DN");
         }
-
     
     $global:DomainFQDN = $DN.substring(3); $global:DomainFQDN = $global:DomainFQDN.replace("DC=",".").replace(",","");
 
