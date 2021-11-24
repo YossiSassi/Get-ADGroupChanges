@@ -6,7 +6,7 @@ Function Get-ADGroupChanges
 
     ADGroupChanges Function: Get-ADGroupChanges
     Author: 1nTh35h311 (yossis@protonmail.com, #Yossi_Sassi)
-    Version: 1.5.1
+    Version: 1.5.2
     Required Dependencies: None
     Optional Dependencies: None
     License: 
@@ -312,9 +312,10 @@ Function Get-GroupReplMetadata {
                         if ($ReplValue.DS_REPL_VALUE_META_DATA.pszObjectDn -like "*0ADEL:*")
                             # member is a deleted Object
                             {
-                                $MemberSamAccountName = $ReplValue.DS_REPL_VALUE_META_DATA.pszObjectDn.Split("\0ADEL:")[0].replace("CN=","")
-                                $MemberAdminCount = "N/A (DELETED)"
-                                $Enabled = "N/A (DELETED)"
+                                [int]$0ADELindex = $ReplValue.DS_REPL_VALUE_META_DATA.pszObjectDn.IndexOf("\0ADEL:");
+                                $MemberSamAccountName = $ReplValue.DS_REPL_VALUE_META_DATA.pszObjectDn.Substring(0,$0ADELindex);
+                                $MemberAdminCount = "N/A (DELETED)";
+                                $Enabled = "N/A (DELETED)";
                             }
                         else
                             # other error occured (e.g. illegal chars in DN, etc)
@@ -486,7 +487,14 @@ $global:UseExistingOfflineDBInstance = $UseExistingOfflineDBInstance;
 $global:Username = $UserName;
 [bool]$SkipOutput = $false;
 
-if ($UserName) {[switch]$AllGroups = $true}
+if ($UserName) {
+        [switch]$AllGroups = $true;
+        if (!(([adsisearcher]"(samaccountname=$global:Username)").FindOne()))
+            {
+                Write-Warning "[x] Account $global:Username Not found in AD. please ensure you've typed it correctly and try again.`nQuiting.";
+                break;
+            }
+    }
 
 # Get current machine role
 $Role = Get-Wmiobject -Class Win32_computersystem
@@ -651,6 +659,7 @@ if ($global:UseExistingOfflineDBInstance -and $global:DSAProc -eq $null)
     $global:DomainFQDN = $DN.substring(3); $global:DomainFQDN = $global:DomainFQDN.replace("DC=",".").replace(",","");
 
     if ($AllGroups) {
+        Write-Host "[*] Queries for single users or all groups may take a while to complete. Please be patient..." -ForegroundColor Cyan;
         # Query data from all groups
         $global:GroupMembershipChanges = @();
 
