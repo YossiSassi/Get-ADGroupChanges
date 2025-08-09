@@ -6,9 +6,11 @@ Function Get-ADGroupChanges
 
     ADGroupChanges Function: Get-ADGroupChanges
     Author: 1nTh35h311 (yossis@protonmail.com, #Yossi_Sassi)
-    Version: 1.5.3
+    Version: 1.5.4
+
     Required Dependencies: None
     Optional Dependencies: None
+    
     License: 
 	Ten Root Cyber Security Ltd. End-User License Agreement 
 	DOWNLOADING, INSTALLING, ACCESSING OR USING THE TOOLS WHICH PRESENTED IN BSIDESTLV 2021 BY TEN ROOT CYBER SECURITY LTD (THE "PRODUCT" or "SOFTWARE") CONSTITUTES EXPRESS ACCEPTANCE OF THIS AGREEMENT. TEN ROOT CYBER SECURITY IS WILLING TO LICENSE SOFTWARE TO  YOU ONLY IF YOU ACCEPT ALL OF THE TERMS CONTAINED IN THIS AGREEMENT (THE “EULA" or "AGREEMENT"). BY DOWNLOADING, INSTALLING, ACCESSING, OR USING THE SOFTWARE, USING THE PRODUCT OR OTHERWISE EXPRESSING YOUR AGREEMENT TO THE TERMS CONTAINED IN THE AGREEMENT, YOU INDIVIDUALLY AND ON BEHALF OF THE BUSINESS OR OTHER ORGANIZATION THAT YOU REPRESENT (THE “USER”) EXPRESSLY CONSENT TO BE BOUND BY THIS AGREEMENT. 
@@ -417,6 +419,19 @@ Function Get-GroupReplMetadata {
                     }
                 
                 Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "DaysSinceLastChange" -Value $DaysSinceLastAction -Force
+
+                # check for case where user was added temproraily to a group, and is STILL an active member of the group
+                if ($GroupChangeObj.LastChangeDateTime -gt $GroupChangeObj.DateTimeAdded -and $GroupChangeObj.DateTimeRemoved -eq "-" -and $GroupChangeObj.LastChange -ne "!Temporary Member Removed (TTL)!")
+                    {
+                        Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "DateTimeAdded" -Value $GroupChangeObj.LastChangeDateTime -Force;
+                        Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "LastChange" -Value "Added (Temporarily)" -Force
+                    }
+
+                # check for case where user was added temproraily to a group, and expired its membership (reflect the correct AddedTime)
+                if ($GroupChangeObj.LastChangeDateTime -gt $GroupChangeObj.DateTimeAdded -and $GroupChangeObj.LastChange -eq "!Temporary Member Removed (TTL)!")
+                    {
+                        Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "DateTimeAdded" -Value $GroupChangeObj.LastChangeDateTime -Force
+                    }
 
                 $global:GroupMembershipChanges += $GroupChangeObj
                 Clear-Variable GroupChangeObj
