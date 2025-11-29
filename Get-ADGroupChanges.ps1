@@ -6,7 +6,7 @@ Function Get-ADGroupChanges
 
     ADGroupChanges Function: Get-ADGroupChanges
     Author: 1nTh35h311 (yossis@protonmail.com, #Yossi_Sassi)
-    Version: 1.5.4
+    Version: 1.5.5
 
     Required Dependencies: None
     Optional Dependencies: None
@@ -45,7 +45,7 @@ Query all group changes in the domain, for all users.
 Query all group changes for a specific user (SamAccountName) in the domain (Runs -AllGroups 'behind the scenes', and filters results)
 
 .PARAMETER Domain
-Domain to be queried (optional. defaults to current domain. N/A for offline Backup/Snapshot instances).
+The FQDN of the Domain to be queried (Optional. defaults to current domain DNS name. N/A for offline Backup/Snapshot instances).
 
 .PARAMETER Output
 Output to CSV file or Grid/Open results in a form (uses PowerShell ISE) - or Both. By default - outputs to console only.
@@ -190,7 +190,7 @@ yossis@protonmail.com
         [string]$UserName,
 
         [Parameter(Mandatory = $false)]
-        [string]$Domain = "$env:USERDOMAIN",
+        [string]$Domain = "$env:USERDNSDOMAIN",
 
         [ValidateSet("ConsoleOnly", "Grid", "CSV", "CSV+Grid", IgnoreCase = $true)]
         [Parameter(Mandatory = $false)]
@@ -678,17 +678,76 @@ if ($global:UseExistingOfflineDBInstance -and $global:DSAProc -eq $null)
         {
             if ($Domain)
                 {
-                    $DN = ([adsi]"LDAP://$Domain").distinguishedName
+                    # Get the domain NC and oldest DC from the Specified domain FQDN
+                    # First, get the default domain naming context
+                    
+                    $domainNC = "DC=" + $($domain.Replace(".",",DC="))
+
+                    # Build LDAP path
+                    $searcher = New-Object System.DirectoryServices.DirectorySearcher;
+                    $searcher.SearchRoot = "LDAP://$domainNC";
+
+                    # Only computer objects with server roles indicating a DC
+                    $searcher.Filter = "(&(objectCategory=computer)(userAccountControl:1.2.840.113556.1.4.803:=8192))";
+
+                    # Ask for attributes
+                    $searcher.PropertiesToLoad.Add("name")        | Out-Null;
+                    $searcher.PropertiesToLoad.Add("dnsHostName") | Out-Null;
+                    $searcher.PropertiesToLoad.Add("whenCreated") | Out-Null;
+
+                    $results = $searcher.FindAll();
+
+                    $DCs = foreach ($r in $results) {
+                        $props = $r.Properties;
+
+                        [PSCustomObject]@{
+                            DCName      = $props["dnshostname"][0]
+                            WhenCreated = [datetime]$props["whencreated"][0]
+                        }
+                    }
+
+                    # Sort and return the oldest DC, and DN for DomainObj
+                    $OldestDCfqdn = $DCs | Sort-Object WhenCreated | Select-Object -First 1 -ExpandProperty DCName;
+                    $DN = "$OldestDCfqdn/$domainNC"
                 }
             else
                 {
-                    $DN = ([adsi]'').distinguishedName;
+                    # Get the default domain naming context
+                    $rootDSE = [ADSI]"LDAP://RootDSE";
+                    $domainNC = $rootDSE.defaultNamingContext;
+
+                    # Build LDAP path
+                    $searcher = New-Object System.DirectoryServices.DirectorySearcher;
+                    $searcher.SearchRoot = "LDAP://$domainNC";
+
+                    # Only computer objects with server roles indicating a DC
+                    $searcher.Filter = "(&(objectCategory=computer)(userAccountControl:1.2.840.113556.1.4.803:=8192))";
+
+                    # Ask for attributes
+                    $searcher.PropertiesToLoad.Add("name")        | Out-Null;
+                    $searcher.PropertiesToLoad.Add("dnsHostName") | Out-Null;
+                    $searcher.PropertiesToLoad.Add("whenCreated") | Out-Null;
+
+                    $results = $searcher.FindAll();
+
+                    $DCs = foreach ($r in $results) {
+                        $props = $r.Properties;
+
+                        [PSCustomObject]@{
+                            DCName      = $props["dnshostname"][0]
+                            WhenCreated = [datetime]$props["whencreated"][0]
+                        }
+                    }
+
+                    # Sort and return the oldest DC, and DN for DomainObj
+                    $OldestDCfqdn = $DCs | Sort-Object WhenCreated | Select-Object -First 1 -ExpandProperty DCName;
+                    $DN = "$OldestDCfqdn/$domainNC"
                 }
 
             $DomainObj = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$DN");
         }
     
-    $global:DomainFQDN = $DN.substring(3); $global:DomainFQDN = $global:DomainFQDN.replace("DC=",".").replace(",","");
+    $global:DomainFQDN = $DN.Split("/")[1].Substring(3).replace("DC=",".").replace(",","");
 
     if ($AllGroups) {
         Write-Host "[*] Queries for single users or all groups may take a while to complete. Please be patient..." -ForegroundColor Cyan;
