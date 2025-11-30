@@ -6,7 +6,7 @@ Function Get-ADGroupChanges
 
     ADGroupChanges Function: Get-ADGroupChanges
     Author: 1nTh35h311 (yossis@protonmail.com, #Yossi_Sassi)
-    Version: 1.5.5
+    Version: 1.5.6
 
     Required Dependencies: None
     Optional Dependencies: None
@@ -252,7 +252,7 @@ Function Get-GroupReplMetadata {
         $objSearcher = New-Object System.DirectoryServices.DirectorySearcher -ArgumentList $DomainObj
         $ObjSearcher.PageSize = $PageSize; $objSearcher.SizeLimit = $PageSize
         $ObjSearcher.Filter = "(&(objectClass=group)(name=$GroupName))"
-        $ObjSearcher.PropertiesToLoad.AddRange(("AdminCount","CanonicalName", "DistinguishedName", "Description", "GroupType","samaccountname", "SidHistory", "ManagedBy", "msDS-ReplValueMetaData", "ObjectSID", "WhenCreated", "WhenChanged"))
+        $ObjSearcher.PropertiesToLoad.AddRange(("AdminCount","CanonicalName", "DistinguishedName", "Description", "GroupType","samaccountname", "SidHistory", "ManagedBy", "msDS-ReplValueMetaData", "ObjectSID", "WhenCreated", "WhenChanged", "member"))
 
         $GroupObj = $ObjSearcher.FindOne()
         $ObjSearcher.dispose()
@@ -432,6 +432,11 @@ Function Get-GroupReplMetadata {
                     {
                         Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "DateTimeAdded" -Value $GroupChangeObj.LastChangeDateTime -Force
                     }
+
+                # v1.5.6 - check is the member is still part of the group
+                if ($GroupObj.Properties.member -contains $ReplValue.DS_REPL_VALUE_META_DATA.pszObjectDn) {
+                    Add-Member -InputObject $GroupChangeObj -MemberType NoteProperty -Name "LastChange" -Value "Added" -Force
+                }
 
                 $global:GroupMembershipChanges += $GroupChangeObj
                 Clear-Variable GroupChangeObj
@@ -678,7 +683,7 @@ if ($global:UseExistingOfflineDBInstance -and $global:DSAProc -eq $null)
         {
             if ($Domain)
                 {
-                    # Get the domain NC and oldest DC from the Specified domain FQDN
+                    # v1.5.5 - Get the domain NC and oldest DC from the Specified domain FQDN
                     # First, get the default domain naming context
                     
                     $domainNC = "DC=" + $($domain.Replace(".",",DC="))
